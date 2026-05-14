@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ClassManager - Attendance & Payments</title>
+    <!-- Supabase JS library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background: #f4f7fc;
+            padding: 20px;
+        }
+        .app-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        /* header */
+        .header {
+            background: white;
+            padding: 20px 24px;
+            border-radius: 24px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+            border: 1px solid #e9edf2;
+        }
+        h1 {
+            font-size: 1.7rem;
+            color: #1e3a5f;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .sub {
+            color: #4a627a;
+            font-size: 0.9rem;
+        }
+        /* dashboard cards */
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 18px 20px;
+            flex: 1 1 180px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            border: 1px solid #eef2f6;
+        }
+        .card h3 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #5b7a9a;
+            margin-bottom: 12px;
+        }
+        .card .number {
+            font-size: 2.1rem;
+            font-weight: 700;
+            color: #1e4663;
+        }
+        /* forms */
+        .section-card {
+            background: white;
+            border-radius: 24px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            border: 1px solid #e9edf2;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1f3b4c;
+            margin-bottom: 18px;
+            border-left: 4px solid #2c7da0;
+            padding-left: 14px;
+        }
+        .form-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: flex-end;
+        }
+        .input-group {
+            flex: 1 1 170px;
+            min-width: 140px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #2c5a7a;
+            margin-bottom: 5px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid #cbdde9;
+            background: white;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2c7da0;
+            box-shadow: 0 0 0 2px rgba(44,125,160,0.2);
+        }
+        button {
+            background: #2c7da0;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: 0.15s;
+            font-size: 0.85rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        button:hover {
+            background: #1f5e7e;
+            transform: scale(0.98);
+        }
+        .delete-btn {
+            background: #d9534f;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+        .delete-btn:hover {
+            background: #c9302c;
+        }
+        .att-btn {
+            background: #5cb85c;
+            padding: 6px 12px;
+            margin-right: 6px;
+            font-size: 0.75rem;
+        }
+        .absent-btn {
+            background: #f0ad4e;
+        }
+        .absent-btn:hover {
+            background: #ec971f;
+        }
+        .paid-btn {
+            background: #5bc0de;
+        }
+        .unpaid-btn {
+            background: #f7b95e;
+        }
+        .student-table {
+            overflow-x: auto;
+            margin-top: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #f8fafc;
+            color: #1e4663;
+            font-weight: 600;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge-present {
+            background: #dff0d8;
+            color: #2b6e3b;
+        }
+        .badge-absent {
+            background: #f8dddd;
+            color: #b33;
+        }
+        .badge-paid {
+            background: #d9edf7;
+            color: #31708f;
+        }
+        .badge-unpaid {
+            background: #fcf8e3;
+            color: #8a6d3b;
+        }
+        .mobile-stack {
+            display: flex;
+            flex-direction: column;
+        }
+        @media (max-width: 700px) {
+            body {
+                padding: 12px;
+            }
+            th, td {
+                font-size: 0.75rem;
+                padding: 8px 4px;
+            }
+            .action-buttons {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .att-btn, .absent-btn, .paid-btn, .unpaid-btn, .delete-btn {
+                margin: 2px 0;
+                width: auto;
+            }
+            .form-grid {
+                flex-direction: column;
+            }
+            .input-group {
+                width: 100%;
+            }
+        }
+        .info-message {
+            background: #eef2fa;
+            border-radius: 16px;
+            padding: 10px;
+            margin: 15px 0 0;
+            color: #2c5a7a;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="header">
+        <h1>📋 ClassManager</h1>
+        <div class="sub">Attendance · Payments · Students</div>
+    </div>
+
+    <!-- SIMPLE DASHBOARD -->
+    <div class="dashboard" id="dashboardStats">
+        <div class="card"><h3>👨‍🎓 Total Students</h3><div class="number" id="totalStudents">0</div></div>
+        <div class="card"><h3>✅ Today Present</h3><div class="number" id="todayPresent">0</div></div>
+        <div class="card"><h3>💰 Paid this month</h3><div class="number" id="paidCount">0</div></div>
+        <div class="card"><h3>📅 Unpaid</h3><div class="number" id="unpaidCount">0</div></div>
+    </div>
+
+    <!-- Add Student Section -->
+    <div class="section-card">
+        <div class="section-title">➕ Add New Student</div>
+        <div class="form-grid" id="addStudentForm">
+            <div class="input-group"><label>Student Name</label><input type="text" id="studentName" placeholder="e.g., Riya Sharma"></div>
+            <div class="input-group"><label>Father's Name</label><input type="text" id="fatherName" placeholder="Father name"></div>
+            <div class="input-group"><label>Mobile</label><input type="tel" id="mobile" placeholder="9876543210"></div>
+            <div class="input-group"><label>Class</label><input type="text" id="class" placeholder="Grade 5"></div>
+            <div class="input-group"><label>Monthly Fee (₹)</label><input type="number" id="fee" placeholder="2500"></div>
+            <div class="input-group"><button id="addStudentBtn">➕ Add Student</button></div>
+        </div>
+        <div id="addMessage" class="info-message" style="display:none;"></div>
+    </div>
+
+    <!-- Students & Attendance + Payments Table -->
+    <div class="section-card">
+        <div class="section-title">📋 Student Roster · Attendance & Payments</div>
+        <div class="student-table">
+            <table id="studentTable">
+                <thead>
+                    <tr><th>Name</th><th>Father</th><th>Mobile</th><th>Class</th><th>Fee (₹)</th><th>Today's Attendance</th><th>Payment Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="studentTableBody">
+                    <tr><td colspan="8" style="text-align:center;">Loading students...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- SUPABASE CONFIGURATION (CHANGE TO YOURS) ----------
+    // IMPORTANT: Replace with your own Supabase URL and anon key!
+    const SUPABASE_URL = 'https://your-project.supabase.co';      // <-- REPLACE
+    const SUPABASE_ANON_KEY = 'your-anon-key';                   // <-- REPLACE
+    
+    // For demo / instruction: if keys are placeholders, show alert but still let code run (will fail gracefully)
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // ------------------- GLOBALS -------------------
+    let studentsList = [];      // store students with joined payment & attendance status for today
+    
+    // Helper: get today's date in YYYY-MM-DD
+    function getTodayDate() {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    }
+    
+    // ------------------- FETCH ALL DATA (students, attendance for today, payments for current month) -------------
+    async function fetchAllData() {
+        try {
+            // 1. Fetch all students
+            const { data: studentsData, error: stuErr } = await supabaseClient
+                .from('students')
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (stuErr) throw stuErr;
+            studentsList = studentsData || [];
+            
+            // 2. Fetch today's attendance records (for quick status)
+            const todayStr = getTodayDate();
+            const { data: attendanceData, error: attErr } = await supabaseClient
+                .from('attendance')
+                .select('student_id, status')
+                .eq('date', todayStr);
+            if (attErr) throw attErr;
+            
+            const attendanceMap = new Map();
+            if (attendanceData) {
+                attendanceData.forEach(rec => { attendanceMap.set(rec.student_id, rec.status); });
+            }
+            
+            // 3. Fetch payments for current month (all records, we will filter on frontend for "paid" status)
+            // For simplicity: we fetch payments where status = 'paid' for current month-year and map latest.
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1; // 1-12
+            const startDate = `${currentYear}-${String(currentMonth).padStart(2,'0')}-01`;
+            const endDate = `${currentYear}-${String(currentMonth).padStart(2,'0')}-31`;
+            
+            const { data: paymentsData, error: payErr } = await supabaseClient
+                .from('payments')
+                .select('student_id, status, payment_month')
+                .eq('status', 'paid')
+                .gte('payment_month', startDate)
+                .lte('payment_month', endDate);
+            if (payErr) throw payErr;
+            
+            const paidStudentsSet = new Set();
+            if (paymentsData) {
+                paymentsData.forEach(p => { paidStudentsSet.add(p.student_id); });
+            }
+            
+            // combine into student objects
+            const enriched = studentsList.map(student => {
+                const attendanceStatus = attendanceMap.get(student.id) || 'absent';
+                const paymentStatus = paidStudentsSet.has(student.id) ? 'paid' : 'unpaid';
+                return { ...student, attendanceStatus, paymentStatus };
+            });
+            studentsList = enriched;
+            renderStudentTable();
+            updateDashboard();
+        } catch (error) {
+            console.error("Fetch error:", error);
+            document.getElementById('studentTableBody').innerHTML = `<tr><td colspan="8" style="color:red;">Error loading data: ${error.message}. Check Supabase config.</td></tr>`;
+        }
+    }
+    
+    // update dashboard counts
+    function updateDashboard() {
+        const total = studentsList.length;
+        // today present: count where attendanceStatus === 'present'
+        const todayPresent = studentsList.filter(s => s.attendanceStatus === 'present').length;
+        const paidCount = studentsList.filter(s => s.paymentStatus === 'paid').length;
+        const unpaidCount = total - paidCount;
+        document.getElementById('totalStudents').innerText = total;
+        document.getElementById('todayPresent').innerText = todayPresent;
+        document.getElementById('paidCount').innerText = paidCount;
+        document.getElementById('unpaidCount').innerText = unpaidCount;
+    }
+    
+    // render table with action buttons
+    function renderStudentTable() {
+        const tbody = document.getElementById('studentTableBody');
+        if (!studentsList.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No students added yet. Add a student!</td></tr>';
+            return;
+        }
+        let html = '';
+        for (let stud of studentsList) {
+            const attendanceBadge = stud.attendanceStatus === 'present' ? '<span class="badge badge-present">✅ Present</span>' : '<span class="badge badge-absent">❌ Absent</span>';
+            const paymentBadge = stud.paymentStatus === 'paid' ? '<span class="badge badge-paid">💰 Paid</span>' : '<span class="badge badge-unpaid">⚠️ Unpaid</span>';
+            html += `<tr>
+                <td>${escapeHtml(stud.name)}</td>
+                <td>${escapeHtml(stud.father_name || '')}</td>
+                <td>${escapeHtml(stud.mobile || '')}</td>
+                <td>${escapeHtml(stud.class || '')}</td>
+                <td>₹${stud.monthly_fee || 0}</td>
+                <td class="action-buttons" style="white-space:nowrap;">
+                    <button class="att-btn" data-id="${stud.id}" data-action="present">✅ Present</button>
+                    <button class="absent-btn" data-id="${stud.id}" data-action="absent">❌ Absent</button>
+                    <div style="margin-top:4px;">${attendanceBadge}</div>
+                </td>
+                <td class="action-buttons">
+                    <button class="paid-btn" data-id="${stud.id}" data-pay="paid">💵 Mark Paid</button>
+                    <button class="unpaid-btn" data-id="${stud.id}" data-pay="unpaid">⚠️ Mark Unpaid</button>
+                    <div>${paymentBadge}</div>
+                </td>
+                <td><button class="delete-btn" data-id="${stud.id}">🗑️ Delete</button></td>
+            </tr>`;
+        }
+        tbody.innerHTML = html;
+        
+        // attach dynamic event listeners
+        document.querySelectorAll('.att-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const studentId = btn.getAttribute('data-id');
+                const action = btn.getAttribute('data-action'); // present/absent
+                await markAttendance(studentId, action);
+            });
+        });
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const studentId = btn.getAttribute('data-id');
+                await deleteStudent(studentId);
+            });
+        });
+        document.querySelectorAll('.paid-btn, .unpaid-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const studentId = btn.getAttribute('data-id');
+                const newStatus = btn.classList.contains('paid-btn') ? 'paid' : 'unpaid';
+                await updatePaymentStatus(studentId, newStatus);
+            });
+        });
+    }
+    
+    // helper escapeHtml
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;});}
+    
+    // ---------- ATTENDANCE MARK ----------
+    async function markAttendance(studentId, status) { // status = 'present' or 'absent'
+        const todayStr = getTodayDate();
+        try {
+            // Upsert: first check if attendance record exists for today and student
+            const { data: existing, error: fetchErr } = await supabaseClient
+                .from('attendance')
+                .select('id')
+                .eq('student_id', studentId)
+                .eq('date', todayStr)
+                .maybeSingle();
+            if (fetchErr && fetchErr.code !== 'PGRST116') throw fetchErr;
+            
+            let result;
+            if (existing) {
+                // update
+                result = await supabaseClient
+                    .from('attendance')
+                    .update({ status: status })
+                    .eq('id', existing.id);
+            } else {
+                // insert
+                result = await supabaseClient
+                    .from('attendance')
+                    .insert({ student_id: studentId, date: todayStr, status: status });
+            }
+            if (result.error) throw result.error;
+            
+            // update local state & re-render
+            const studentIndex = studentsList.findIndex(s => s.id === studentId);
+            if (studentIndex !== -1) studentsList[studentIndex].attendanceStatus = status;
+            renderStudentTable();   // re-render instantly
+            updateDashboard();
+            showTemporaryMessage("Attendance updated!", "#dff0d8");
+        } catch (err) {
+            console.error(err);
+            showTemporaryMessage("Error updating attendance: " + err.message, "#f8dddd");
+        }
+    }
+    
+    // Payment update logic: for current month, store payments record with status paid/unpaid.
+    // if unpaid, we can delete paid record for current month (or insert unpaid but we just delete paid entry)
+    // For simplicity: if mark paid -> insert a payment record for current month with status 'paid'. If mark unpaid -> delete any paid record for this month.
+    async function updatePaymentStatus(studentId, newStatus) {
+        const today = new Date();
+        const yearMonth = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`; // first day representation
+        try {
+            if (newStatus === 'paid') {
+                // Check if already paid for this month
+                const { data: existingPaid, error: findErr } = await supabaseClient
+                    .from('payments')
+                    .select('id')
+                    .eq('student_id', studentId)
+                    .eq('payment_month', yearMonth)
+                    .eq('status', 'paid')
+                    .maybeSingle();
+                if (findErr && findErr.code !== 'PGRST116') throw findErr;
+                if (!existingPaid) {
+                    const { error: insertErr } = await supabaseClient
+                        .from('payments')
+                        .insert({ student_id: studentId, status: 'paid', payment_month: yearMonth });
+                    if (insertErr) throw insertErr;
+                }
+            } else { // unpaid: remove paid record for this month if exists
+                const { data: paidRec, error: delFind } = await supabaseClient
+                    .from('payments')
+                    .select('id')
+                    .eq('student_id', studentId)
+                    .eq('payment_month', yearMonth)
+                    .eq('status', 'paid')
+                    .maybeSingle();
+                if (delFind && delFind.code !== 'PGRST116') throw delFind;
+                if (paidRec) {
+                    const { error: delErr } = await supabaseClient
+                        .from('payments')
+                        .delete()
+                        .eq('id', paidRec.id);
+                    if (delErr) throw delErr;
+                }
+            }
+            // Re-fetch to sync payment status across all students (to reflect correctly)
+            await fetchAllData();
+            showTemporaryMessage(`Payment marked as ${newStatus}`, "#dff0d8");
+        } catch (err) {
+            console.error(err);
+            showTemporaryMessage("Payment update failed: " + err.message, "#f8dddd");
+        }
+    }
+    
+    // Delete student (cascade: manually delete related attendance & payments or handle via FK, but we do it clean)
+    async function deleteStudent(studentId) {
+        if (!confirm("Delete student permanently? All attendance & payment records will be removed.")) return;
+        try {
+            // Delete attendance records of this student
+            await supabaseClient.from('attendance').delete().eq('student_id', studentId);
+            // Delete payments records
+            await supabaseClient.from('payments').delete().eq('student_id', studentId);
+            // Delete student
+            const { error } = await supabaseClient.from('students').delete().eq('id', studentId);
+            if (error) throw error;
+            await fetchAllData(); // refresh whole UI
+            showTemporaryMessage("Student deleted successfully", "#dff0d8");
+        } catch (err) {
+            console.error(err);
+            showTemporaryMessage("Delete error: " + err.message, "#f8dddd");
+        }
+    }
+    
+    // Add new student
+    async function addStudent() {
+        const name = document.getElementById('studentName').value.trim();
+        const fatherName = document.getElementById('fatherName').value.trim();
+        const mobile = document.getElementById('mobile').value.trim();
+        const className = document.getElementById('class').value.trim();
+        const monthlyFee = parseFloat(document.getElementById('fee').value);
+        
+        if (!name) { showTemporaryMessage("Student name is required", "#f8dddd"); return; }
+        if (isNaN(monthlyFee) || monthlyFee < 0) { showTemporaryMessage("Enter valid fee amount", "#f8dddd"); return; }
+        
+        const newStudent = {
+            name: name,
+            father_name: fatherName || null,
+            mobile: mobile || null,
+            class: className || null,
+            monthly_fee: monthlyFee,
+        };
+        try {
+            const { data, error } = await supabaseClient
+                .from('students')
+                .insert(newStudent)
+                .select();
+            if (error) throw error;
+            // clear form
+            document.getElementById('studentName').value = '';
+            document.getElementById('fatherName').value = '';
+            document.getElementById('mobile').value = '';
+            document.getElementById('class').value = '';
+            document.getElementById('fee').value = '';
+            await fetchAllData();   // refresh list immediately
+            showTemporaryMessage(`✅ Student "${name}" added successfully!`, "#dff0d8");
+        } catch (err) {
+            console.error(err);
+            showTemporaryMessage("Add failed: " + err.message, "#f8dddd");
+        }
+    }
+    
+    function showTemporaryMessage(msg, bgColor) {
+        let msgDiv = document.getElementById('addMessage');
+        if (!msgDiv) return;
+        msgDiv.innerText = msg;
+        msgDiv.style.backgroundColor = bgColor || "#eef2fa";
+        msgDiv.style.display = "block";
+        setTimeout(() => { msgDiv.style.display = "none"; }, 2800);
+    }
+    
+    // event listeners for add button
+    document.getElementById('addStudentBtn').addEventListener('click', addStudent);
+    
+    // initial load
+    fetchAllData().catch(console.warn);
+    
+    // Extra: check Supabase config warning
+    if (SUPABASE_URL === 'https://your-project.supabase.co' || SUPABASE_ANON_KEY === 'your-anon-key') {
+        setTimeout(() => {
+            const msgDiv = document.getElementById('addMessage');
+            if(msgDiv) {
+                msgDiv.style.display = "block";
+                msgDiv.style.backgroundColor = "#fff3cd";
+                msgDiv.innerText = "⚠️ Supabase credentials not configured. Please replace SUPABASE_URL & SUPABASE_ANON_KEY with your actual project keys. Tables must exist.";
+            }
+        }, 500);
+    }
+</script>
+</body>
+</html>
+
+<!-- ======================== SUPABASE SQL SCHEMA ========================
+Run these in your Supabase SQL Editor to set up required tables.
+
